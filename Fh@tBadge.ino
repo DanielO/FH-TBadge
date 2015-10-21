@@ -29,9 +29,9 @@ const int rowPin[numRow] = { 12,2,3,9,5,10,14,15 };		// Thes are the pins that t
 //const int rowPin[numRow] = { 8,9,10,11,12,22,23,24 };		// Thes are the pins that the rows are connected to in order from row 0 
 
 /* Display configuration */
-#define MIRROR_ROW 1
-#define MIRROR_COL 1
-#define TRANSPOSE 1
+#define MIRROR_ROW
+//#define MIRROR_COL
+//#define TRANSPOSE
 
 int refreshDisplayFlag = 0;		// a variable to let us know when we need to refresh the next LED in the matrix
 int updateMessageFlag = 0;	// a variable to let us know its time to update the message
@@ -284,7 +284,7 @@ void RefreshDisplay()
 	c = r ^ c;
 	r = r ^ c;
 #endif
-	if (((display[c] >> r) & 1) == 1)
+	if (((display[r] >> c) & 1) == 1)
 		digitalWrite(rowPin[rowPtr], rowState);		// Check if the DOT needs to be on
 	else
 		digitalWrite(rowPin[rowPtr], !rowState);	// other wise turn it off
@@ -307,13 +307,21 @@ void FillDisplay(void)
 	}
 }
 
+uint8_t revByte(uint8_t b)
+{
+		b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+		b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+		b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+		return b;
+}
+
 
 void updateMessage()
 {
 	if (++letter >= 104) letter =0;
 	for (int i = 0; i<8; i++)
 	{
-		display[7-i] = Font8x5[(letter*8)+i]; 	
+		display[7-i] = revByte(Font8x5[(letter*8)+i]);
 	}
 }
 
@@ -325,7 +333,7 @@ void displayChar(char c)
 
 	for (int i = 0; i<8; i++)
 	{
-		display[i] = Font8x5[((c - ' ') * 8) + i];
+		display[i] = revByte(Font8x5[((c - ' ') * 8) + i]);
 	}
 }
 
@@ -406,13 +414,13 @@ void loop()
 	const int len = strlen(msg);
 	const uint8_t *ch1, *ch2;
 	for (int idx = 0; idx < len - 1; idx++) {
-		for (int scrollpos = 7; scrollpos >= 0; scrollpos--) {
+		for (int scrollpos = 0; scrollpos < 8; scrollpos++) {
 			// Display character at idx left shifted by scrollpos
 			// with character at idx+1
 			ch1 = &Font8x5[(msg[idx] - ' ') * 8];
 			ch2 = &Font8x5[(msg[idx + 1] - ' ') * 8];
 			for (int r = 0; r < 8; r++) {
-				display[r] = (ch1[r] << scrollpos) | ch2[r] >> (8 - scrollpos);
+				display[r] = (revByte(ch1[r]) << scrollpos) | revByte(ch2[r]) >> (8 - scrollpos);
 			}
 			delay(50);
 		}
