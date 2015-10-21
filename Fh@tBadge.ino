@@ -386,13 +386,13 @@ void setup()
 	Serial.begin(9600);
 
 	displayChar('F');
-	delay(1000);
+	delay(200);
 	displayChar('H');
-	delay(1000);
+	delay(200);
 	displayChar('@');
-	delay(1000);
+	delay(200);
 	displayChar('T');
-	delay(1000);
+	delay(200);
 	ClearDisplay();
 	delay(2000);
 
@@ -402,6 +402,21 @@ void setup()
 
 void loop()
 {
+	const char *msg = "Flinders & Hackerspace @ Tonsley ";
+	const int len = strlen(msg);
+	const uint8_t *ch1, *ch2;
+	for (int idx = 0; idx < len - 1; idx++) {
+		for (int scrollpos = 7; scrollpos >= 0; scrollpos--) {
+			// Display character at idx left shifted by scrollpos
+			// with character at idx+1
+			ch1 = &Font8x5[(msg[idx] - ' ') * 8];
+			ch2 = &Font8x5[(msg[idx + 1] - ' ') * 8];
+			for (int r = 0; r < 8; r++) {
+				display[r] = (ch1[r] << scrollpos) | ch2[r] >> (8 - scrollpos);
+			}
+			delay(50);
+		}
+	}
 	// Flash Display
 	for (int i = 0; i < 5 ; i++)
 	{
