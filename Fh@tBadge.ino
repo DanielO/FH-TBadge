@@ -444,3 +444,9 @@ void loop()
 
 
 
+/*
+ * Local variables:
+ * tab-width: 4
+ * mode: c
+ * End:
+ */
