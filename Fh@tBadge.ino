@@ -28,7 +28,10 @@ const int rowPin[numRow] = { 12,2,3,9,5,10,14,15 };		// Thes are the pins that t
 //const int colPin[numCol] = { 0, 1,2,3,4,5,6,7 };					// Thes are the pins that the columns are connected to in order from col 0 
 //const int rowPin[numRow] = { 8,9,10,11,12,22,23,24 };		// Thes are the pins that the rows are connected to in order from row 0 
 
-
+/* Display configuration */
+#define MIRROR_ROW 1
+#define MIRROR_COL 1
+#define TRANSPOSE 1
 
 int refreshDisplayFlag = 0;		// a variable to let us know when we need to refresh the next LED in the matrix
 int updateMessageFlag = 0;	// a variable to let us know its time to update the message
@@ -37,7 +40,6 @@ int colPtr = 0;							// a pointer to the current column
 
 int display[8];	// This array holds the current image we want to display
 int invertDisplay = 0;
-
 
 // These are some different screens
 
@@ -54,7 +56,7 @@ smile_bmp[] =
 	B00111100 }
 ,
 neutral_bmp[] =
-{ 
+{
 	B00111100,
 	B01000010,
 	B10100101,
@@ -65,7 +67,7 @@ neutral_bmp[] =
 	B00111100 }
 ,
 frown_bmp[] =
-{ 
+{
 	B00111100,
 	B01000010,
 	B10100101,
@@ -75,19 +77,21 @@ frown_bmp[] =
 	B01000010,
 	B00111100 }
 ,
-heart[] = { 0x30, 0x48, 0x44, 0x22, 0x22, 0x44, 0x48, 0x30 };
-
-static const uint8_t PROGMEM
-//splash_F[] = { 0x0, 0xFF, 0xFF, 0xCC, 0xCC, 0xCC, 0xC0, 0x0},
-splash_F[] = { 0x0, 0xC0,	0xCC,0xCC, 0xCC,0xFF, 0xFF, 0x0},
-splash_H[] = {0x0, 0xFF, 0xFF, 0xC, 0xC, 0xFF, 0xFF, 0x0},
-splash_at[] = {	0x38, 0x64, 0xCD, 0xBD, 0xA5, 0xDB, 0x66, 0x3C},
-splash_T[] = {0x0, 0xC0, 0xC0, 0xFF, 0xFF, 0xC0, 0xC0, 0x0};
-
+	heart[] =
+{
+	B00000000,
+	B01100110,
+	B10011001,
+	B10000001,
+	B01000010,
+	B00100100,
+	B00011000,
+	B00000000
+};
 // The character set courtesy of cosmicvoid.
 // Ascii starting at dec 32 or "Blank"
 
-byte Font8x5[104*8] =
+static const uint8_t PROGMEM Font8x5[104*8] =
 {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 	// Blank
 	0x02, 0x02, 0x02, 0x02, 0x02, 0x00, 0x02, 0x00, 	// !
@@ -248,20 +252,42 @@ void start_timer_3(uint32_t frequency)
 // This is called so fast that it appears that all LEDs are on
 void RefreshDisplay()
 {
-	bool  rowState = ROW_ON;
-	// coloumns
-	if (colPtr == 0) digitalWrite(colPin[numCol-1], COL_OFF);		// Turn off the last column
-	else digitalWrite(colPin[colPtr-1],COL_OFF);							// Turn off the previous column
-	digitalWrite(colPin[colPtr],COL_ON);										// Turn on the current column
+	bool rowState = ROW_ON;
+	int c, r, tmp;
+
+	// columns
+	if (colPtr == 0)
+		digitalWrite(colPin[numCol - 1], COL_OFF);	// Turn off the last column
+	else
+		digitalWrite(colPin[colPtr - 1], COL_OFF);	// Turn off the previous column
+	digitalWrite(colPin[colPtr], COL_ON);			// Turn on the current column
 
 	// Rows
-	if (rowPtr == 0) digitalWrite(rowPin[numRow-1], ROW_OFF);		// Turn off the last row
-	else digitalWrite(rowPin[rowPtr-1],ROW_OFF);								// Turn off the previous row
+	if (rowPtr == 0)
+		digitalWrite(rowPin[numRow - 1], ROW_OFF);	// Turn off the last row
+	else
+		digitalWrite(rowPin[rowPtr - 1], ROW_OFF);	// Turn off the previous row
 
-	if( invertDisplay)	rowState = ROW_OFF;
+	if (invertDisplay)
+		rowState = ROW_OFF;
 
-	if (   ( (display[colPtr ]>>rowPtr)  & 1 ) == 1  )	digitalWrite(rowPin[rowPtr],rowState);	// Check if the DOT needs to be on
-	else digitalWrite(rowPin[rowPtr],!rowState);				// other wise turn it off
+	c = colPtr;
+	r = rowPtr;
+#ifdef MIRROR_ROW
+	r = 7 - r;
+#endif
+#ifdef MIRROR_COL
+	c = 7 - c;
+#endif
+#ifdef TRANSPOSE
+	r = r ^ c;
+	c = r ^ c;
+	r = r ^ c;
+#endif
+	if (((display[c] >> r) & 1) == 1)
+		digitalWrite(rowPin[rowPtr], rowState);		// Check if the DOT needs to be on
+	else
+		digitalWrite(rowPin[rowPtr], !rowState);	// other wise turn it off
 }
 
 // clears the display, All LEDs off
@@ -288,6 +314,18 @@ void updateMessage()
 	for (int i = 0; i<8; i++)
 	{
 		display[7-i] = Font8x5[(letter*8)+i]; 	
+	}
+}
+
+
+void displayChar(char c)
+{
+	if (c - ' ' > sizeof(Font8x5) / 8)
+		c = ' ';
+
+	for (int i = 0; i<8; i++)
+	{
+		display[i] = Font8x5[((c - ' ') * 8) + i];
 	}
 }
 
@@ -347,14 +385,13 @@ void setup()
 	//Start the serial Port
 	Serial.begin(9600);
 
-
-	displaySplash (splash_F);
+	displayChar('F');
 	delay(1000);
-	displaySplash (splash_H);
+	displayChar('H');
 	delay(1000);
-	displaySplash (splash_at);
+	displayChar('@');
 	delay(1000);
-	displaySplash (splash_T);
+	displayChar('T');
 	delay(1000);
 	ClearDisplay();
 	delay(2000);
