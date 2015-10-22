@@ -35,8 +35,7 @@ const int rowPin[numRow] = { 12,2,3,9,5,10,14,15 };		// Thes are the pins that t
 
 int refreshDisplayFlag = 0;		// a variable to let us know when we need to refresh the next LED in the matrix
 int updateMessageFlag = 0;	// a variable to let us know its time to update the message
-int rowPtr = 0;							// a pointer to the current row
-int colPtr = 0;							// a pointer to the current column
+int colIdx = 0;				// Index of column to be refreshed
 
 int display[8];	// This array holds the current image we want to display
 int invertDisplay = 0;
@@ -216,7 +215,6 @@ byte lentbl_S[104] =
 	7, 7, 7, 7, 7, 7, 7, 7
 };
 
-
 // Define the Interrupt Service Routine (ISR) 
 // For the timer
 void __attribute__((interrupt)) myISR()
@@ -224,14 +222,9 @@ void __attribute__((interrupt)) myISR()
 	//refreshDisplayFlag = 1;
 	RefreshDisplay();
 	updateMessageFlag++;
-	if (++rowPtr >= numRow)
-	{
-		rowPtr = 0;
-		if (++colPtr >= numCol) 
-		{
-			colPtr = 0;		
-		}
-	}
+
+	colIdx = (colIdx + 1) % numCol;
+
 	clearIntFlag(_TIMER_3_IRQ);
 }
 
@@ -253,41 +246,42 @@ void start_timer_3(uint32_t frequency)
 void RefreshDisplay()
 {
 	bool rowState = ROW_ON;
-	int c, r, tmp;
+	int c, r, rowPtr, tmp;
 
-	// columns
-	if (colPtr == 0)
-		digitalWrite(colPin[numCol - 1], COL_OFF);	// Turn off the last column
-	else
-		digitalWrite(colPin[colPtr - 1], COL_OFF);	// Turn off the previous column
-	digitalWrite(colPin[colPtr], COL_ON);			// Turn on the current column
+	// De-select old column
+	for (int c = 0; c < numCol; c++)
+		digitalWrite(colPin[c], COL_OFF);
 
-	// Rows
-	if (rowPtr == 0)
-		digitalWrite(rowPin[numRow - 1], ROW_OFF);	// Turn off the last row
-	else
-		digitalWrite(rowPin[rowPtr - 1], ROW_OFF);	// Turn off the previous row
+	// De-select old rows
+	for (int r = 0; r < numRow; r++)
+		digitalWrite(rowPin[r], ROW_OFF);
+
+	// Select current column
+	digitalWrite(colPin[colIdx], COL_ON);
 
 	if (invertDisplay)
 		rowState = ROW_OFF;
 
-	c = colPtr;
-	r = rowPtr;
-#ifdef MIRROR_ROW
-	r = 7 - r;
-#endif
+	c = colIdx;
 #ifdef MIRROR_COL
 	c = 7 - c;
 #endif
-#ifdef TRANSPOSE
-	r = r ^ c;
-	c = r ^ c;
-	r = r ^ c;
+	// Light up each row as necessary
+	for (rowPtr = 0; rowPtr < numRow; rowPtr++) {
+		r = rowPtr;
+#ifdef MIRROR_ROW
+		r = 7 - r;
 #endif
-	if (((display[r] >> c) & 1) == 1)
-		digitalWrite(rowPin[rowPtr], rowState);		// Check if the DOT needs to be on
-	else
-		digitalWrite(rowPin[rowPtr], !rowState);	// other wise turn it off
+#ifdef TRANSPOSE
+		r = r ^ c;
+		c = r ^ c;
+		r = r ^ c;
+#endif
+		if (((display[r] >> c) & 1) == 1)
+			digitalWrite(rowPin[rowPtr], rowState);		// Check if the DOT needs to be on
+		else
+			digitalWrite(rowPin[rowPtr], !rowState);	// other wise turn it off
+	}
 }
 
 // clears the display, All LEDs off
