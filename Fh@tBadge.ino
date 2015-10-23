@@ -419,7 +419,7 @@ void loop()
 	const char *msg = "Flinders & Hackerspace @ Tonsley ";
 	const int len = strlen(msg);
 	const uint8_t *fdata;
-	int idx = 0, charwidth = 0, charpos = 0;
+	int charwidth = 0, charpos = 0;
 
 	ClearDisplay();
 	while (1) {
