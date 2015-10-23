@@ -89,7 +89,6 @@ frown_bmp[] =
 };
 // The character set courtesy of cosmicvoid.
 // Ascii starting at dec 32 or "Blank"
-
 static const uint8_t PROGMEM Font8x5[104*8] =
 {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 	// Blank
@@ -322,12 +321,10 @@ void updateMessage()
 
 void displayChar(char c)
 {
-	if (c - ' ' > sizeof(Font8x5) / 8)
-		c = ' ';
-
+	const uint8_t *d = getFontData(c);
 	for (int i = 0; i<8; i++)
 	{
-		display[i] = revByte(Font8x5[((c - ' ') * 8) + i]);
+		display[i] = revByte(d[i]);
 	}
 }
 
@@ -402,22 +399,52 @@ void setup()
 	Serial.println("FH@T");
 }
 
+const uint8_t *getFontData(char c)
+{
+	int ofs = c - ' ';
+	if (ofs > sizeof(Font8x5) / 8) // Truncate to space
+		ofs = 0;
+	return Font8x5 + ofs * 8;
+}
+const int getCharLen(char c)
+{
+	int ofs = c - ' ';
+	if (ofs > sizeof(Font8x5) / 8) // Truncate to space
+		ofs = 0;
+	return lentbl_S[ofs];
+}
+
 void loop()
 {
 	const char *msg = "Flinders & Hackerspace @ Tonsley ";
 	const int len = strlen(msg);
-	const uint8_t *ch1, *ch2;
-	for (int idx = 0; idx < len - 1; idx++) {
-		for (int scrollpos = 0; scrollpos < 8; scrollpos++) {
-			// Display character at idx left shifted by scrollpos
-			// with character at idx+1
-			ch1 = &Font8x5[(msg[idx] - ' ') * 8];
-			ch2 = &Font8x5[(msg[idx + 1] - ' ') * 8];
-			for (int r = 0; r < 8; r++) {
-				display[r] = (revByte(ch1[r]) << scrollpos) | revByte(ch2[r]) >> (8 - scrollpos);
-			}
-			delay(50);
+	const uint8_t *fdata;
+	int idx = 0, charwidth = 0, charpos = 0;
+
+	ClearDisplay();
+	while (1) {
+		if (charpos == charwidth) {
+			if (*msg != '\0') {
+				charwidth = getCharLen(*msg);
+				charpos = 0;
+				fdata = getFontData(*msg);
+				msg++;
+			} else
+				charwidth = 8;
 		}
+
+		// Left shift everything in the display
+		for (int r = 0; r < numRow; r++) {
+			display[r] = display[r] << 1;
+		}
+
+		for (int r = 0; r < numRow; r++) {
+			display[r] |= (fdata[r] >> charpos) & 0x01;
+		}
+		charpos++;
+		if (*msg == '\0' && charpos == charwidth)
+			break;
+		delay(50);
 	}
 	// Flash Display
 	for (int i = 0; i < 5 ; i++)
