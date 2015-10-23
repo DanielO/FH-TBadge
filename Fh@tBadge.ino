@@ -456,7 +456,7 @@ void loop()
 		if (lastchar && charpos == charwidth)
 			break;
 
-		delay(50);
+		delay(75);
 	}
 	// Flash Display
 	for (int i = 0; i < 5 ; i++)
