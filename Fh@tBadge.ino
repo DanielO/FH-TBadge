@@ -385,13 +385,13 @@ void setup()
 	Serial.begin(9600);
 
 	displayChar('F');
-	delay(200);
+	delay(400);
 	displayChar('H');
-	delay(200);
+	delay(400);
 	displayChar('@');
-	delay(200);
+	delay(400);
 	displayChar('T');
-	delay(200);
+	delay(400);
 	ClearDisplay();
 	delay(2000);
 
