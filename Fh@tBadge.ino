@@ -419,20 +419,24 @@ void loop()
 	const char *msg = "Flinders & Hackerspace @ Tonsley ";
 	const int len = strlen(msg);
 	const uint8_t *fdata;
-	int charwidth = 0, charpos = 0;
+	int charwidth = 0, charpos = 0, lastchar = 0;
 
 	ClearDisplay();
 	while (1) {
 		// Do we need to look for a new character?
 		if (charpos == charwidth) {
+			// Is this the end of the message?
 			if (*msg != '\0') {
 				charwidth = getCharLen(*msg) + 1; // Add one to get a gap between letters
-				charpos = 0;
 				fdata = getFontData(*msg);
 				msg++;
-			} else
-				// If we are at the end of the message just push 8 blank columns along
+			} else {
+				// If we are at the end of the message just push blank columns along
 				charwidth = 8;
+				fdata = getFontData(' ');
+				lastchar = 1;
+			}
+			charpos = 0;
 		}
 
 		// Scroll left everything in the display
@@ -449,7 +453,7 @@ void loop()
 		charpos++;
 
 		// End of message?
-		if (*msg == '\0' && charpos == charwidth)
+		if (lastchar && charpos == charwidth)
 			break;
 
 		delay(50);
