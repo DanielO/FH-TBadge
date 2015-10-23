@@ -423,27 +423,35 @@ void loop()
 
 	ClearDisplay();
 	while (1) {
+		// Do we need to look for a new character?
 		if (charpos == charwidth) {
 			if (*msg != '\0') {
-				charwidth = getCharLen(*msg);
+				charwidth = getCharLen(*msg) + 1; // Add one to get a gap between letters
 				charpos = 0;
 				fdata = getFontData(*msg);
 				msg++;
 			} else
+				// If we are at the end of the message just push 8 blank columns along
 				charwidth = 8;
 		}
 
-		// Left shift everything in the display
+		// Scroll left everything in the display
 		for (int r = 0; r < numRow; r++) {
 			display[r] = display[r] << 1;
 		}
 
+		// Add new data in
 		for (int r = 0; r < numRow; r++) {
 			display[r] |= (fdata[r] >> charpos) & 0x01;
 		}
+
+		// Move to next column for this character
 		charpos++;
+
+		// End of message?
 		if (*msg == '\0' && charpos == charwidth)
 			break;
+
 		delay(50);
 	}
 	// Flash Display
