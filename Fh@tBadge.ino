@@ -416,7 +416,7 @@ const int getCharLen(char c)
 
 void loop()
 {
-	const char *msg = "Flinders & Hackerspace @ Tonsley ";
+	const char *msg = "Flinders & Hackerspace @ Tonsley";
 	const int len = strlen(msg);
 	const uint8_t *fdata;
 	int charwidth = 0, charpos = 0, lastchar = 0;
