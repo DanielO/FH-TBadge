@@ -1,3 +1,6 @@
+// Light sensing with LEDs
+// http://playground.arduino.cc/Learning/LEDSensor
+
 // Timer 3 setup
 // This value works for Flinduino, at 40 MHz ?
 #define TICKS_PER_SECOND 40000000
@@ -219,7 +222,7 @@ byte lentbl_S[104] =
 void __attribute__((interrupt)) myISR()
 {
 	//refreshDisplayFlag = 1;
-	RefreshDisplay();
+//	RefreshDisplay();
 	updateMessageFlag++;
 
 	colIdx = (colIdx + 1) % numCol;
@@ -359,7 +362,8 @@ void DrawPixel( int x, int y, int state)
 
 
 void setup() 
-{                
+{
+#if 0
 	invertDisplay = false;
 	// Set all column pins to outputs and off
 	for( int i = 0; i < numCol; i++)
@@ -381,9 +385,6 @@ void setup()
 	clearIntFlag(_TIMER_3_IRQ);
 	setIntEnable(_TIMER_3_IRQ);
 
-	//Start the serial Port
-	Serial.begin(9600);
-
 	displayChar('F');
 	delay(400);
 	displayChar('H');
@@ -395,7 +396,9 @@ void setup()
 	ClearDisplay();
 	delay(2000);
 
-	//delay(5000);	// Delay 5 seconds so you can see the serial port begin
+#endif
+	//Start the serial Port
+	Serial.begin(9600);
 	Serial.println("FH@T");
 }
 
@@ -421,6 +424,50 @@ void loop()
 	const uint8_t *fdata;
 	int charwidth = 0, charpos = 0, lastchar = 0;
 
+#define LED_N_SIDE 12 // Row 0
+#define LED_P_SIDE 4 // Column 0
+
+	unsigned int j, n = 0;
+	uint32_t a = 0;
+  while (1) {
+	  Serial.println("========");
+	  // Apply reverse voltage, charge up the pin and led capacitance
+	  pinMode(LED_N_SIDE, OUTPUT);
+	  pinMode(LED_P_SIDE, OUTPUT);
+	  digitalWrite(LED_N_SIDE, HIGH);
+	  digitalWrite(LED_P_SIDE, LOW);
+
+	  // Isolate the pin 2 end of the diode
+	  a = (a << 1) | (digitalRead(LED_N_SIDE) & 0x01);
+	  pinMode(LED_N_SIDE, INPUT);
+	  a = (a << 1) | (digitalRead(LED_N_SIDE) & 0x01);
+	  digitalWrite(LED_N_SIDE, LOW);  // turn off internal pull-up resistor
+
+	  for (int i = 0; i < 10; i++)
+		  a = (a << 1) | (digitalRead(LED_N_SIDE) & 0x01);
+
+	  // Count how long it takes the diode to bleed back down to a logic zero
+	  for (j = 0; j < 30000; j++) {
+		  if (digitalRead(LED_N_SIDE) == 0)
+			  break;
+	  }
+	  // You could use 'j' for something useful, but here we are just using the
+	  // delay of the counting.  In the dark it counts higher and takes longer, 
+	  // increasing the portion of the loop where the LED is off compared to 
+	  // the 1000 microseconds where we turn it on.
+#if 0
+	  // Turn the light on for 1000 microseconds
+	  digitalWrite(LED_P_SIDE, HIGH);
+	  digitalWrite(LED_N_SIDE, LOW);
+	  pinMode(LED_P_SIDE, OUTPUT);
+	  pinMode(LED_N_SIDE, OUTPUT);
+#else
+	  Serial.print("j = "); Serial.println(j);
+	  Serial.print("a = "); Serial.println(a);
+#endif
+	  delayMicroseconds(1000);
+	  // we could turn it off, but we know that is about to happen at the loop() start
+  }
 	ClearDisplay();
 	while (1) {
 		// Do we need to look for a new character?
