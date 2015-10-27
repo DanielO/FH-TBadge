@@ -422,33 +422,65 @@ void loop()
 	const char *msg = "Flinders & Hackerspace @ Tonsley";
 	const int len = strlen(msg);
 	const uint8_t *fdata;
-	int charwidth = 0, charpos = 0, lastchar = 0;
+	int charwidth = 0, charpos = 0, lastchar = 0, r, c;
 
 #define LED_N_SIDE 9 // Row
 #define LED_P_SIDE 0 // Column
 
-	unsigned int j, n = 0;
-	uint32_t a = 0;
+	unsigned int j, n = 0, light[8][8];
 
-  while (1) {
-	  // Apply reverse voltage, charge up the pin and led capacitance
-	  pinMode(LED_N_SIDE, OUTPUT);
-	  pinMode(LED_P_SIDE, INPUT);
-	  digitalWrite(LED_N_SIDE, HIGH);
-	  digitalWrite(LED_P_SIDE, LOW);
+	while (1) {
+		for (r = 0; r < 8; r++) {
+			for (c = 0; c < 8; c++) {
+				// Apply reverse voltage, charge up the pin and led capacitance
+				pinMode(rowPin[r], OUTPUT);
+				digitalWrite(rowPin[r], HIGH);
+				pinMode(colPin[c], INPUT);
+				digitalWrite(colPin[c], LOW);
 
-	  // Isolate the pin 2 end of the diode
-	  // XXX this doesn't make sense but it works, soo...
-	  pinMode(LED_N_SIDE, INPUT_PULLUP);
-	  pinMode(LED_N_SIDE, INPUT);
+				// Isolate the pin 2 end of the diode
+				// XXX this doesn't make sense but it works, soo...
+				pinMode(rowPin[c], INPUT_PULLUP);
+				pinMode(rowPin[c], INPUT);
+				// Count how long it takes the diode to bleed back down to a logic zero
+				for (j = 0; j < 30000; j++) {
+					if (digitalRead(LED_N_SIDE) == 0)
+						break;
+				}
+				light[r][c] = j;
+			}
+		}
+		Serial.println("\033[2J\033[f========");
+		for (r = 0; r < 8; r++) {
+			for (c = 0; c < 8; c++) {
+				unsigned int rp, cp;
+				rp = r;
+				cp = c;
+#ifdef MIRROR_COL
+				cp = 7 - cp;
+#endif
+#ifdef MIRROR_ROW
+				rp = 7 - rp;
+#endif
+#ifdef TRANSPOSE
+				rp = rp ^ cp;
+				cp = rp ^ cp;
+				rp = rp ^ cp;
+#endif
 
-	  // Count how long it takes the diode to bleed back down to a logic zero
-	  for (j = 0; j < 30000; j++) {
-		  if (digitalRead(LED_N_SIDE) == 0)
-			  break;
-	  }
-	  Serial.print("j = "); Serial.println(j);
-  }
+				if (light[r][c] < 3000)
+					Serial.print('*');
+				else if (light[r][c] < 6000)
+					Serial.print('+');
+				else if (light[r][c] < 12000)
+					Serial.print('.');
+				else
+					Serial.print(' ');
+			}
+			Serial.println();
+		}
+		Serial.println();
+	}
 	ClearDisplay();
 	while (1) {
 		// Do we need to look for a new character?
