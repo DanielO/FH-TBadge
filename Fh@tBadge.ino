@@ -40,8 +40,8 @@ int colIdx = 0;				// Index of column to be refreshed
 int display[8];	// This array holds the current image we want to display
 int invertDisplay = 0;
 
+#include "anim.h"
 // These are some different screens
-
 static const uint8_t PROGMEM
 smile_bmp[] =
 { 
@@ -421,6 +421,13 @@ void loop()
 	const uint8_t *fdata;
 	int charwidth = 0, charpos = 0, lastchar = 0;
 
+	ClearDisplay();
+	for (int i = 0; i < sizeof(anim) / 8; i++) {
+		for (int r = 0; r < 8; r++)
+			display[r] = anim[i * 8 + r];
+		delay(anim_durs[i]);
+	}
+	delay(500);
 	ClearDisplay();
 	while (1) {
 		// Do we need to look for a new character?
