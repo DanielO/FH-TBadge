@@ -501,7 +501,7 @@ void loop() {
 	delay(1000);
 	DisplaySplash(heart);
 
-	invertDisplay = true;
+	invertDisplay = false;
 
 	// Light up pixels in sequence and back again
 	delay(1000);
