@@ -366,10 +366,23 @@ void DrawPixel( int x, int y, int state)
 	}
 }
 
+void DisplayMatrix(int time)
+{
+	// matrix waterfall display
+	int dtime = 125; // Intra fram delay (msec)
+	for (int t = 0; t < time * 1000 / dtime; t++)
+	{
+		for (int i = 6; i >= 0; i--)
+		{
+			display[i + 1] = display[i];
+		}
+		delay(dtime);
+		display[0] = byte(random(256));
+	}
+}
 
-
-void setup() 
-{                
+void setup()
+{
 	invertDisplay = false;
 	// Set all column pins to outputs and off
 	for( int i = 0; i < numCol; i++)
@@ -430,6 +443,9 @@ void loop()
 	const int len = strlen(msg);
 	const uint8_t *fdata;
 	int charwidth = 0, charpos = 0, lastchar = 0;
+
+	ClearDisplay();
+	DisplayMatrix(10);
 
 	ClearDisplay();
 	for (int i = 0; i < sizeof(anim) / 8; i++) {
