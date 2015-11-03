@@ -15,18 +15,16 @@ def extract(infile, outfile, name):
     framenum = 1
     for f in s:
         framedurs.append(f.info['duration'])
-        outfile.write("\t// Frame %d\n" % (framenum))
+        outfile.write("\t")
         frame = f.tobytes()
         assert len(frame) == 64 # Expecting 8x8 1 byte per pixel
         for row in range(8):
-            outfile.write("\tB")
+            data = 0
             for col in range(8):
                 if frame[row * 8 + col] == '\x00': # Colour 0 = on
-                    outfile.write("1")
-                else:
-                    outfile.write("0")
-            outfile.write(",\n")
-        outfile.write("\n")
+                    data |= 1 << col
+            outfile.write("0x%02x, " % (data))
+        outfile.write("// Frame %d\n" % (framenum))
         framenum += 1
     outfile.write("};\n")
     outfile.write("static const uint8_t PROGMEM %s_durs[] = {\n" % (name))
