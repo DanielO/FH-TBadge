@@ -2,16 +2,16 @@
 #define TICKS_PER_SECOND 40000000	// This value works for Flinduino, at 40 MHz ?
 #define T3_ON 0x8000				// Turn on Timer 3
 #define T3_PS_1_1 0					// Set Prescale to 1:64????
-#define T3_SOURCE_INT 0				//  Timer source internal timer ???
+#define T3_SOURCE_INT 0				// Timer source internal timer ???
 
 #define ON 			1
 #define OFF 		0
-#define COL_ON		HIGH	// Columns are Anodes
+#define COL_ON		HIGH			// Columns are Anodes
 #define COL_OFF 	LOW
-#define ROW_ON		LOW		// Rows are Cathodes
+#define ROW_ON		LOW				// Rows are Cathodes
 #define ROW_OFF		HIGH
-const int numCol = 8;		// The display has 8 columns
-const int numRow = 8;		// and 8 rows
+const int numCol = 8;				// The display has 8 columns
+const int numRow = 8;				// and 8 rows
 
 // FH@T Badge display with black back
 //const int colPin[numCol] = { 8, 13,7,11,0,6,1,4 };		// Thes are the pins that the columns are connected to in order from col 0
@@ -30,9 +30,8 @@ const int rowPin[numRow] = { 12,2,3,9,5,10,14,15 };			// Thes are the pins that 
 //#define MIRROR_COL
 //#define TRANSPOSE
 
-int colIdx = 0;				// Index of column to be refreshed
-
-int display[8];				// This array holds the current image we want to display
+int colIdx = 0;						// Index of column to be refreshed
+int display[8];						// This array holds the current image we want to display
 int invertDisplay = 0;
 
 // Include animation converted from GIF
