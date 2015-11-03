@@ -239,7 +239,7 @@ static void start_timer_3(uint32_t frequency) {
 }
 
 // Refresh part of the display
-// Draws a row at once but is called so frequently you can't tell
+// Draws a column at once but is called so frequently you can't tell
 static void RefreshDisplay() {
 	bool rowState = ROW_ON;
 	int c, r, rowPtr, tmp;
