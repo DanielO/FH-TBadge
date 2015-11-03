@@ -40,11 +40,13 @@ int colIdx = 0;				// Index of column to be refreshed
 int display[8];	// This array holds the current image we want to display
 int invertDisplay = 0;
 
+// Include animation converted from GIF
 #include "anim.h"
+
 // These are some different screens
 static const uint8_t PROGMEM
 smile_bmp[] =
-{ 
+{
 	B00111100,
 	B01000010,
 	B10100101,
@@ -86,7 +88,15 @@ frown_bmp[] =
 	B00100100,
 	B00011000,
 	B00000000
-};
+},
+	// Intro letters (slightly bigger)
+	splash_F[] = { 0x7E, 0x7E,	0x60, 0x7C,0x7C,0x60, 0x60, 0x60},
+	splash_H[] = {0x66, 0x66, 0x66, 0x7E, 0x7E, 0x66, 0x66, 0x66},
+	splash_at[] = {	0x3C, 0x66, 0xDB, 0xA9, 0xAD, 0xDE, 0x60, 0x3C},
+	splash_T[] = {0x7E, 0x7E, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18};
+
+;
+
 // The character set courtesy of cosmicvoid.
 // Ascii starting at dec 32 or "Blank"
 static const uint8_t PROGMEM Font8x5[104*8] =
@@ -384,13 +394,13 @@ void setup()
 	//Start the serial Port
 	Serial.begin(9600);
 
-	displayChar('F');
+	displaySplash(splash_F);
 	delay(400);
-	displayChar('H');
+	displaySplash(splash_H);
 	delay(400);
-	displayChar('@');
+	displaySplash(splash_at);
 	delay(400);
-	displayChar('T');
+	displaySplash(splash_T);
 	delay(400);
 	ClearDisplay();
 	delay(2000);
