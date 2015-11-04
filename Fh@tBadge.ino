@@ -209,7 +209,7 @@ void DisplaySplash(const uint8_t splash[numCol]) {
 		display[i] = splash[i];
 }
 
-// Draws a single pixel at coordinate x, y 
+// Draws a single pixel at coordinate x, y
 // if state is 1 LED will be turned on
 // if state is 0 LED will be off
 void DrawPixel( int x, int y, int state) {
