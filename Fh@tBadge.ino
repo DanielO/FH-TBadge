@@ -1,8 +1,4 @@
-// Timer 3 setup
 #define TICKS_PER_SECOND 40000000	// This value works for Flinduino, at 40 MHz ?
-#define T3_ON 0x8000				// Turn on Timer 3
-#define T3_PS_1_1 0					// Set Prescale to 1:64????
-#define T3_SOURCE_INT 0				// Timer source internal timer ???
 
 #define ON 			1
 #define OFF 		0
@@ -131,7 +127,7 @@ static void start_timer_3(uint32_t frequency) {
 // Draws a column at once but is called so frequently you can't tell
 static void RefreshDisplay() {
 	bool rowState = ROW_ON;
-	int c, r, rowPtr, tmp;
+	int c, r, rowPtr;
 
 	// De-select old column
 	for (int c = 0; c < NUM_COL; c++)
@@ -180,14 +176,14 @@ static uint8_t revByte(uint8_t b) {
 // Look up font data for a single character
 static const uint8_t *getFontData(char c) {
 	int ofs = c - ' ';
-	if (ofs > sizeof(Font8x5) / 8) // Truncate to space
+	if (ofs > (int)(sizeof(Font8x5) / 8)) // Truncate to space
 		ofs = 0;
 	return Font8x5 + ofs * 8;
 }
 
 static const int getCharLen(char c) {
 	int ofs = c - ' ';
-	if (ofs > sizeof(Font8x5) / 8) // Truncate to space
+	if (ofs > (int)(sizeof(Font8x5) / 8)) // Truncate to space
 		ofs = 0;
 	return lentbl_S[ofs];
 }
@@ -248,8 +244,7 @@ void DisplayMatrix(int time, int dtime) {
 
 // Scroll text across the display
 void DisplayText(const char PROGMEM *msg, int coldelay) {
-	const int len = strlen(msg);
-	const uint8_t *fdata;
+	const uint8_t *fdata = NULL;
 	int charwidth = 0, charpos = 0, lastchar = 0;
 
 	while (1) {
@@ -325,7 +320,7 @@ uint8_t countNeighbors(uint8_t board[NUM_ROW][NUM_COL], uint8_t row, uint8_t col
  * Returns whether or not the specified cell is on.
  * If the cell specified is outside the game board, returns false.
  */
-boolean isCellAlive(uint8_t board[NUM_ROW][NUM_COL], char row, char col) {
+boolean isCellAlive(uint8_t board[NUM_ROW][NUM_COL], uint8_t row, uint8_t col) {
 	if (row < 0 || col < 0 || row >= NUM_ROW || col >= NUM_COL) {
 		return false;
 	}
@@ -372,8 +367,8 @@ void swapGameBoards(uint8_t oldboard[NUM_ROW][NUM_COL], uint8_t newboard[NUM_ROW
 }
 
 void DisplayConway(const uint8_t PROGMEM start[NUM_ROW][NUM_COL], int time, int dtime) {
-	uint8_t oldboard[NUM_ROW][NUM_COL] = { 0 };
-	uint8_t newboard[NUM_ROW][NUM_COL] = { 0 };
+	uint8_t oldboard[NUM_ROW][NUM_COL] = { };
+	uint8_t newboard[NUM_ROW][NUM_COL] = { };
 
 	memcpy(oldboard, start, sizeof(oldboard));
 
