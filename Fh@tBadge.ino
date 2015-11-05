@@ -1,4 +1,14 @@
-#define TICKS_PER_SECOND 40000000	// This value works for Flinduino, at 40 MHz ?
+/* Final clock frequency for CPU is..
+ * = Crystal frequency / FPLLIDIV * PLLMULT / PLLODIV
+ * = 8 / 2 * 20 / 2
+ * = 40MHz
+ *
+ * Frequency to peripherals is
+ * = CPU clock / PBDIV
+ * = 40 / 1
+ * = 40MHz
+ */
+#define TICKS_PER_SECOND 40000000
 
 #define ON 			1
 #define OFF 		0
@@ -106,21 +116,24 @@ static const uint8_t board1[NUM_ROW][NUM_COL] = {
 static void __attribute__((interrupt)) myISR() {
 	RefreshDisplay();
 
-	colIdx = (colIdx + 1) % NUM_COL;
-
 	clearIntFlag(_TIMER_3_IRQ);
 }
 
 
 // start_timer_3 for the timer interupt
-static void start_timer_3(uint32_t frequency) {
+static int start_timer_3(uint32_t frequency) {
 	uint32_t period;
+
 	period = TICKS_PER_SECOND / frequency;
+	if (period < 1 || period > 65535)
+		return 1;
 	T3CONCLR = T3_ON;			// Turn the timer off
 	T3CON = T3_PS_1_1;			// Set the prescaler
 	TMR3 = 0;					// Clear the counter
 	PR3 = period;				// Set the period
 	T3CONSET = T3_ON;			// Turn the timer on
+
+	return 0;
 }
 
 // Refresh part of the display
@@ -403,7 +416,11 @@ void setup() {
 	}
 
 	// Start the timer & install ISR
-	start_timer_3(5);	// 1 kHz
+	// For a 40MHz peripheral clock the frequency range is 610Hz - 40MHz
+	if (start_timer_3(16000)) {	// Hz
+		while (1)
+			Serial.println("Unable to start timer");
+	}
 	setIntVector(_TIMER_3_VECTOR, myISR);
 	setIntPriority(_TIMER_3_VECTOR, 4, 0);
 	clearIntFlag(_TIMER_3_IRQ);
