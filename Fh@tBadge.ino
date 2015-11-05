@@ -93,10 +93,49 @@ static const uint8_t PROGMEM heart[] = {
 };
 
 // Intro letters (slightly bigger)
-static const uint8_t PROGMEM splash_F[] = { 0x7E, 0x7E,	0x60, 0x7C,0x7C,0x60, 0x60, 0x60 };
-static const uint8_t PROGMEM  splash_H[] = { 0x66, 0x66, 0x66, 0x7E, 0x7E, 0x66, 0x66, 0x66 };
-static const uint8_t PROGMEM splash_at[] = { 0x3C, 0x66, 0xDB, 0xA9, 0xAD, 0xDE, 0x60, 0x3C };
-static const uint8_t PROGMEM splash_T[] = { 0x7E, 0x7E, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18 };
+static const uint8_t PROGMEM splash_F[] = {
+	B01111110,
+	B01111110,
+	B01100000,
+	B01111100,
+	B01111100,
+	B01100000,
+	B01100000,
+	B01100000,
+};
+
+static const uint8_t PROGMEM  splash_H[] = {
+	B01100110,
+	B01100110,
+	B01100110,
+	B01111110,
+	B01111110,
+	B01100110,
+	B01100110,
+	B01100110,
+};
+
+static const uint8_t PROGMEM splash_at[] = {
+	B00111100,
+	B01100110,
+	B11011011,
+	B10101001,
+	B10101101,
+	B11011110,
+	B01100000,
+	B00111100,
+};
+
+static const uint8_t PROGMEM splash_T[] = {
+	B01111110,
+	B01111110,
+	B00011000,
+	B00011000,
+	B00011000,
+	B00011000,
+	B00011000,
+	B00011000,
+};
 
 #include "font.h"
 
