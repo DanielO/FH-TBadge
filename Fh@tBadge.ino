@@ -250,19 +250,20 @@ void FadeDown(int dly) {
 	delay(dly * 2);
 }
 
-// Draws a single pixel at coordinate x, y
+// Draws a single pixel at coordinate row, col
 // if state is 1 LED will be turned on
 // if state is 0 LED will be off
-void DrawPixel( int x, int y, int state) {
-	if ((y < 0) || (y >= NUM_COL))
+void DrawPixel(int c, int r, int state) {
+	if (c < 0 || c >= NUM_COL)
 		return;
-	if ((x < 0) || (x >= NUM_ROW))
+	if (r < 0 || r >= NUM_ROW)
 		return;
 
+	c = 7 - c;
 	if (state)
-		display[y] |= 1 << x;
+		display[r] |= 1 << c;
 	else
-		display[y] &= ~(1 << x);
+		display[r] &= ~(1 << c);
 }
 
 // matrix waterfall display
