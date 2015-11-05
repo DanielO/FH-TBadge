@@ -39,6 +39,10 @@ const int rowPin[NUM_ROW] = { 12,2,3,9,5,10,14,15 };			// Thes are the pins that
 int colIdx = 0;						// Index of column to be refreshed
 int display[8];						// This array holds the current image we want to display
 int invertDisplay = 0;
+int brightness = 31;
+int brightnessCount = 0;
+
+int brights[] = {31, 21, 13, 9, 7, 5, 2, 1, 0}; // Brightness levels
 
 // Include animation converted from GIF
 #include "anim.h"
@@ -150,6 +154,13 @@ static void RefreshDisplay() {
 	for (int r = 0; r < NUM_ROW; r++)
 		digitalWrite(rowPin[r], ROW_OFF);
 
+
+	brightnessCount = (brightnessCount + 1) % 32;
+	if (brightness < brightnessCount || brightness == 0)
+		return;
+
+	colIdx = (colIdx + 1) % NUM_COL;
+
 	// Select current column
 	digitalWrite(colPin[colIdx], COL_ON);
 
@@ -228,6 +239,15 @@ void DisplayChar(char c) {
 void DisplaySplash(const uint8_t splash[NUM_COL]) {
 	for (int i = 0; i < NUM_COL; i++)
 		display[i] = splash[i];
+}
+
+// Fade down the brightness over time
+void FadeDown(int dly) {
+	for (uint i = 0; i < sizeof(brights) / sizeof(brights[0]); i++) {
+		brightness = brights[i];
+		delay(dly);
+	}
+	delay(dly * 2);
 }
 
 // Draws a single pixel at coordinate x, y
@@ -417,7 +437,7 @@ void setup() {
 
 	// Start the timer & install ISR
 	// For a 40MHz peripheral clock the frequency range is 610Hz - 40MHz
-	if (start_timer_3(16000)) {	// Hz
+	if (start_timer_3(32000)) {	// Hz
 		while (1)
 			Serial.println("Unable to start timer");
 	}
@@ -430,15 +450,21 @@ void setup() {
 	Serial.begin(9600);
 
 	DisplaySplash(splash_F);
-	delay(400);
+	FadeDown(50);
+
 	DisplaySplash(splash_H);
-	delay(400);
+	FadeDown(50);
+
 	DisplaySplash(splash_at);
-	delay(400);
+	FadeDown(50);
+
 	DisplaySplash(splash_T);
-	delay(400);
+	FadeDown(50);
+
 	ClearDisplay();
-	delay(2000);
+	delay(1000);
+
+	brightness = brights[0]; // Reset brightness for the loop
 
 	Serial.println("FH@T");
 }
