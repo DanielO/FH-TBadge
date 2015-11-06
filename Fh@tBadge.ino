@@ -37,12 +37,14 @@ const int rowPin[NUM_ROW] = { 12,2,3,9,5,10,14,15 };			// Thes are the pins that
 //#define TRANSPOSE
 
 int colIdx = 0;						// Index of column to be refreshed
-int display[8];						// This array holds the current image we want to display
+uint8_t display[NUM_ROW][NUM_COL];	// This array holds the current image we want to display
 int invertDisplay = 0;
 int brightness = 31;
 int brightnessCount = 0;
 
-int brights[] = {31, 21, 13, 9, 7, 5, 2, 1, 0}; // Brightness levels
+uint8_t brights[] = {31, 21, 13, 9, 7, 5, 2, 1, 0}; // Brightness levels
+#define MIN_BRIGHT (brights[sizeof(brights) / sizeof(brights[0]) - 1])
+#define MAX_BRIGHT (brights[0])
 
 // Include animation converted from GIF
 #include "anim.h"
@@ -162,7 +164,6 @@ static void __attribute__((interrupt)) myISR() {
 	clearIntFlag(_TIMER_3_IRQ);
 }
 
-
 // start_timer_3 for the timer interupt
 static int start_timer_3(uint32_t frequency) {
 	uint32_t period;
@@ -221,7 +222,7 @@ static void RefreshDisplay() {
 		c = r ^ c;
 		r = r ^ c;
 #endif
-		if (((display[r] >> c) & 1) == 1)
+		if (display[r][c] != 0)
 			digitalWrite(rowPin[rowPtr], rowState);		// Check if the DOT needs to be on
 		else
 			digitalWrite(rowPin[rowPtr], !rowState);	// other wise turn it off
@@ -256,28 +257,35 @@ static const int getCharLen(char c) {
  **********************************************************************/
 // clears the display, All LEDs off
 void ClearDisplay(void) {
-	for (int i = 0; i < NUM_COL; i++)
-		display[i] = 0;
+	for (int r = 0; r < NUM_ROW; r++)
+		for (int c = 0; c < NUM_COL; c++)
+			display[r][c] = MIN_BRIGHT;
 }
 
 // Dots all on
 void FillDisplay(void)
 {
-	for (int i = 0; i < NUM_COL; i++)
-		display[i] = 0xff;
+	for (int r = 0; r < NUM_ROW; r++)
+		for (int c = 0; c < NUM_COL; c++)
+			display[r][c] = MAX_BRIGHT;
 }
 
 // Display a single character on the screen
 void DisplayChar(char c) {
 	const uint8_t *d = getFontData(c);
-	for (int i = 0; i < 8; i++)
-		display[i] = revByte(d[i]);
+
+	for (int r = 0;r < NUM_ROW; r++) {
+		const uint8_t tmp = revByte(d[r]);
+		for (int c = 0;r < NUM_COL; c++)
+			display[r][c] = tmp >> c & 0x1 ? MAX_BRIGHT : MIN_BRIGHT;
+	}
 }
 
 // Displays an 8 x 8 splash screen
 void DisplaySplash(const uint8_t splash[NUM_COL]) {
-	for (int i = 0; i < NUM_COL; i++)
-		display[i] = splash[i];
+	for (int r = 0; r < NUM_ROW; r++)
+		for (int c = 0; c < NUM_COL; c++)
+			display[r][c] = splash[r] & (1 << c) ? MAX_BRIGHT : MIN_BRIGHT;
 }
 
 // Fade down the brightness over time
@@ -300,18 +308,22 @@ void DrawPixel(int c, int r, int state) {
 
 	c = 7 - c;
 	if (state)
-		display[r] |= 1 << c;
+		display[r][c] |= MAX_BRIGHT;
 	else
-		display[r] &= ~(1 << c);
+		display[r][c] = MIN_BRIGHT;
 }
 
 // matrix waterfall display
 void DisplayMatrix(int time, int dtime) {
 	for (int t = 0; t < time * 1000 / dtime; t++) {
-		for (int i = 6; i >= 0; i--)
-			display[i + 1] = display[i];
+		for (int r = 6; r >= 0; r--)
+			for (int c = 0; c < 8; c++)
+				display[r + 1][c] = display[r][c];
 		delay(dtime);
-		display[0] = byte(random(256));
+
+		uint8_t rnd = byte(random(256));
+		for (int c = 0; c < 8; c++)
+			display[0][c] = rnd & 1 << c ? MAX_BRIGHT : MIN_BRIGHT;
 	}
 }
 
@@ -337,15 +349,14 @@ void DisplayText(const char PROGMEM *msg, int coldelay) {
 			charpos = 0;
 		}
 
-		// Scroll left everything in the display
-		for (int r = 0; r < NUM_ROW; r++) {
-			display[r] = display[r] << 1;
-		}
+		// Scroll everything left in the display
+		for (int r = 0; r < NUM_ROW; r++)
+			for (int c = NUM_COL - 2; c >= 0;  c--)
+				display[r][c + 1] = display[r][c];
 
 		// Add new data in
-		for (int r = 0; r < NUM_ROW; r++) {
-			display[r] |= (fdata[r] >> charpos) & 0x01;
-		}
+		for (int r = 0; r < NUM_ROW; r++)
+			display[r][0] = (fdata[r] >> charpos) & 0x01 ? MAX_BRIGHT : MIN_BRIGHT;
 
 		// Move to next column for this character
 		charpos++;
@@ -362,7 +373,8 @@ void DisplayText(const char PROGMEM *msg, int coldelay) {
 void DisplayAnim(const uint8_t PROGMEM *anim, const uint8_t PROGMEM *durs, int nframes) {
 	for (int i = 0; i < nframes; i++) {
 		for (int r = 0; r < 8; r++)
-			display[r] = anim[i * 8 + r];
+			for (int c = 0; c < 8; c++)
+				display[r][c] = anim[i * 8 + r] & 1 << c ? MAX_BRIGHT : MIN_BRIGHT;
 		delay(durs[i]);
 	}
 }
@@ -447,18 +459,17 @@ void DisplayConway(const uint8_t PROGMEM start[NUM_ROW][NUM_COL], int time, int 
 
 	for (int t = 0; t < time * 1000 / dtime; t++) {
 		for (uint8_t row = 0; row < NUM_ROW; row++) {
-			uint8_t tmp = 0;
 			for (uint8_t col = 0; col < NUM_COL; col++) {
 				if (oldboard[row][col])
-					tmp |= 1 << col;
+					display[row][col] = MAX_BRIGHT;
+				else
+					display[row][col] = MIN_BRIGHT;
 			}
-			display[row] = tmp;
 		}
 		delay(dtime);
 		calculateNewGameBoard(oldboard, newboard);
 		swapGameBoards(oldboard, newboard);
 	}
-
 }
 
 /* Arduino setup function, called once */
@@ -514,33 +525,44 @@ void loop() {
 	const char PROGMEM *msg = "Flinders & Hackerspace @ Tonsley";
 
 	// Display scrolling message (75 msec per column scrolled)
+#if 1
 	ClearDisplay();
 	delay(500);
 	DisplayText(msg, 75);
+#endif
 
 	// Display Conway's game of life for 8 seconds at 8 FPS
+#if 1
 	delay(500);
 	ClearDisplay();
 	DisplayConway(board1, 8, 125);
+#endif
 
 	// Display Matrix for 10 seconds at 8 FPS
+#if 1
 	ClearDisplay();
 	DisplayMatrix(10, 125);
+#endif
 
 	// Display animation
+#if 1
 	ClearDisplay();
 	delay(500);
 	DisplayAnim(anim, anim_durs, sizeof(anim) / 8);
+#endif
 
 	// Flash Display
+#if 1
 	for (int i = 0; i < 5; i++) {
 		FillDisplay();
 		delay(250);
 		ClearDisplay();
 		delay(250);
 	}
+#endif
 
 	// Display some icons
+#if 1
 	invertDisplay = false;
 	ClearDisplay();
 	DisplaySplash(frown_bmp);
@@ -568,8 +590,10 @@ void loop() {
 	DisplaySplash(heart);
 
 	invertDisplay = false;
+#endif
 
 	// Light up pixels in sequence and back again
+#if 1
 	delay(1000);
 	ClearDisplay();
 	for (int c = 0; c < 8; c++) {
@@ -597,6 +621,7 @@ void loop() {
 			delay(25);
 		}
 	}
+#endif
 }
 
 
