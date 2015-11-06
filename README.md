@@ -14,12 +14,12 @@ to rename the directory if you get the zip file, or specify it
 explicitly when cloning.
 
 For the zip file:
-Download https://github.com/DanielO/FH-TBadge/archive/master.zip (will
-end up as FH-TBadge-master.zip)
-Unzip it (will create a directory called FH-TBadge-master)
-Rename FH-TBadge-master to FH@TBadge
+* Download https://github.com/DanielO/FH-TBadge/archive/master.zip
+(will end up as FH-TBadge-master.zip)
+* Unzip it (will create a directory called FH-TBadge-master)
+* Rename FH-TBadge-master to FH@TBadge
 
 For git clone:
-git clone https://github.com/DanielO/FH-TBadge.git FH@TBadge
+* git clone https://github.com/DanielO/FH-TBadge.git FH@TBadge
 
 (or rename the FH-TBadge to FH@TBadge after cloning)
