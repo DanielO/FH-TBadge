@@ -42,7 +42,7 @@ int invertDisplay = 0;
 int brightness = 31;
 int brightnessCount = 0;
 
-uint8_t brights[] = {31, 21, 13, 9, 7, 5, 2, 1, 0}; // Brightness levels
+uint8_t brights[] = {31, 21, 13, 9, 7, 5, 2, 0}; // Brightness levels
 #define MIN_BRIGHT (brights[sizeof(brights) / sizeof(brights[0]) - 1])
 #define MAX_BRIGHT (brights[0])
 
