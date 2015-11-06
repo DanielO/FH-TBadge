@@ -316,8 +316,8 @@ void DrawPixel(int c, int r, int brightness) {
 // matrix waterfall display
 void DisplayMatrix(int time, int dtime) {
 	for (int t = 0; t < time * 1000 / dtime; t++) {
-		for (int r = 6; r >= 0; r--)
-			for (int c = 0; c < 8; c++) {
+		for (int r = NUM_ROW - 2; r >= 0; r--)
+			for (int c = 0; c < NUM_COL; c++) {
 				if (display[r][c] == 0)
 					display[r + 1][c] = 0;
 				else
