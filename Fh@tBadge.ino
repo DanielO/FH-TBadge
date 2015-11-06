@@ -321,7 +321,7 @@ void DrawPixel(int c, int r, int brightness) {
 	if (r < 0 || r >= NUM_ROW)
 		return;
 
-	display[r][c] |= brightness;
+	display[r][c] = brightness;
 }
 
 // matrix waterfall display
