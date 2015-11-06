@@ -10,8 +10,6 @@
  */
 #define TICKS_PER_SECOND 40000000
 
-#define ON 			1
-#define OFF 		0
 #define COL_ON		HIGH			// Columns are Anodes
 #define COL_OFF 	LOW
 #define ROW_ON		LOW				// Rows are Cathodes
