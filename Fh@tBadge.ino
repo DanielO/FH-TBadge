@@ -19,6 +19,7 @@
 
 // List of display routines to run in the loop
 #define DO_TEXT
+#define DO_FIRE
 #define DO_CONWAY
 #define DO_MATRIX
 #define DO_ANIM
@@ -258,6 +259,16 @@ static const int getCharLen(char c) {
 	return lentbl_S[ofs];
 }
 
+int PctChance(int chance) {
+	if (chance < 0)
+		chance = 0;
+	if (chance > 100)
+		chance = 100;
+	if (chance > byte(random(100)))
+		return 1;
+	else
+		return 0;
+}
 /**********************************************************************
  ************************ DISPLAY ROUTINES ****************************
  **********************************************************************/
@@ -328,6 +339,48 @@ void DisplayMatrix(int time, int dtime) {
 		uint8_t rnd = byte(random(256));
 		for (int c = 0; c < 8; c++)
 			display[0][c] = rnd & 1 << c ? MAX_BRIGHT : MIN_BRIGHT;
+	}
+}
+
+// Fire
+// random(fadeamt - 1) will be subtracted each iteration
+// seedchance is out of 100
+void DisplayFire(int time, int dtime, int fadeamt, int seedchance) {
+	for (int t = 0; t < time * 1000 / dtime; t++) {
+		// Move fire up and fade
+		for (int r = 0; r < NUM_ROW; r++) {
+			for (int c = 0; c < NUM_COL; c++) {
+				uint8_t rnd = byte(random(fadeamt));
+				uint8_t oldval = display[r + 1][c];
+				if (oldval == MIN_BRIGHT || oldval <= rnd)
+					display[r][c] = MIN_BRIGHT; // Old value is already off or will be due to fading
+				else
+					display[r][c] = oldval - rnd; // Fade the old value
+			}
+		}
+		// Seed new fire
+		for (int c = 0; c < NUM_COL; c++)
+			display[NUM_ROW - 1][c] = 0;
+		for (int c = 0; c < NUM_COL; c++) {
+			int bias = 0;
+			// Bias seedchance to make 2 "hot spots"
+			if (c == 1 || c == 2)
+				bias = 30;
+			if (c == 5 || c == 6)
+				bias = 30;
+			if (PctChance(seedchance + bias)) {
+				if (c > 1)
+					display[NUM_ROW - 1][c - 1] += MAX_BRIGHT - 3;
+				display[NUM_ROW - 1][c] += MAX_BRIGHT;
+				if (c < 7)
+					display[NUM_ROW - 1][c + 1] += MAX_BRIGHT - 3;
+			}
+		}
+		// Clip to maximum brightnes
+		for (int c = 0; c < NUM_COL; c++)
+			if (display[NUM_ROW - 1][c] > MAX_BRIGHT)
+				display[NUM_ROW - 1][c] = MAX_BRIGHT;
+		delay(dtime);
 	}
 }
 
@@ -524,6 +577,13 @@ void loop() {
 	ClearDisplay();
 	delay(500);
 	DisplayText(msg, 75);
+#endif
+
+	// Display Fire for 10 seconds at ~15 FPS
+#ifdef DO_FIRE
+	ClearDisplay();
+	DisplayFire(10, 67, 4, 40);
+	ClearDisplay();
 #endif
 
 	// Display Conway's game of life for 8 seconds at 8 FPS
