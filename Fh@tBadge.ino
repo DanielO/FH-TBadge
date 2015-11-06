@@ -33,7 +33,7 @@ const int rowPin[NUM_ROW] = { 12,2,3,9,5,10,14,15 };			// Thes are the pins that
 
 // Display configuration
 #define MIRROR_ROW
-//#define MIRROR_COL
+#define MIRROR_COL
 //#define TRANSPOSE
 
 int colIdx = 0;						// Index of column to be refreshed
@@ -274,10 +274,10 @@ void FillDisplay(void)
 void DisplayChar(char c) {
 	const uint8_t *d = getFontData(c);
 
-	for (int r = 0;r < NUM_ROW; r++) {
+	for (int r = 0; r < NUM_ROW; r++) {
 		const uint8_t tmp = revByte(d[r]);
-		for (int c = 0;r < NUM_COL; c++)
-			display[r][c] = tmp >> c & 0x1 ? MAX_BRIGHT : MIN_BRIGHT;
+		for (int c = 0; c < NUM_COL; c++)
+			display[r][c] = tmp >> (NUM_COL - 1 - c) & 0x1 ? MAX_BRIGHT : MIN_BRIGHT;
 	}
 }
 
@@ -285,7 +285,7 @@ void DisplayChar(char c) {
 void DisplaySplash(const uint8_t splash[NUM_COL]) {
 	for (int r = 0; r < NUM_ROW; r++)
 		for (int c = 0; c < NUM_COL; c++)
-			display[r][c] = splash[r] & (1 << c) ? MAX_BRIGHT : MIN_BRIGHT;
+			display[r][c] = splash[r] & (1 << (NUM_COL - 1 - c)) ? MAX_BRIGHT : MIN_BRIGHT;
 }
 
 // Fade down the brightness over time
@@ -306,7 +306,6 @@ void DrawPixel(int c, int r, int state) {
 	if (r < 0 || r >= NUM_ROW)
 		return;
 
-	c = 7 - c;
 	if (state)
 		display[r][c] |= MAX_BRIGHT;
 	else
@@ -351,12 +350,12 @@ void DisplayText(const char PROGMEM *msg, int coldelay) {
 
 		// Scroll everything left in the display
 		for (int r = 0; r < NUM_ROW; r++)
-			for (int c = NUM_COL - 2; c >= 0;  c--)
-				display[r][c + 1] = display[r][c];
+			for (int c = 0; c < NUM_COL - 1;  c++)
+				display[r][c] = display[r][c + 1];
 
-		// Add new data in
+		// Add new data in on right most column
 		for (int r = 0; r < NUM_ROW; r++)
-			display[r][0] = (fdata[r] >> charpos) & 0x01 ? MAX_BRIGHT : MIN_BRIGHT;
+			display[r][NUM_COL - 1] = (fdata[r] >> charpos) & 0x01 ? MAX_BRIGHT : MIN_BRIGHT;
 
 		// Move to next column for this character
 		charpos++;
