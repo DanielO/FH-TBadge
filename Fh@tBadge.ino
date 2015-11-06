@@ -17,6 +17,15 @@
 #define NUM_COL		8
 #define NUM_ROW		8
 
+// List of display routines to run in the loop
+#define DO_TEXT
+#define DO_CONWAY
+#define DO_MATRIX
+#define DO_ANIM
+#define DO_FLASH
+#define DO_ICONS
+#define DO_SEQUENCE
+
 // FH@T Badge display with black back
 //const int colPin[NUM_COL] = { 8, 13,7,11,0,6,1,4 };		// Thes are the pins that the columns are connected to in order from col 0
 //const int rowPin[NUM_ROW] = { 15,14,10,5,9,3,2,12 };		// Thes are the pins that the rows are connected to in order from row 0
@@ -37,12 +46,15 @@ const int rowPin[NUM_ROW] = { 12,2,3,9,5,10,14,15 };			// Thes are the pins that
 int colIdx = 0;						// Index of column to be refreshed
 uint8_t display[NUM_ROW][NUM_COL];	// This array holds the current image we want to display
 int invertDisplay = 0;
-int brightness = 31;
 int brightnessCount = 0;
 
-uint8_t brights[] = {31, 21, 13, 9, 7, 5, 2, 0}; // Brightness levels
-#define MIN_BRIGHT (brights[sizeof(brights) / sizeof(brights[0]) - 1])
-#define MAX_BRIGHT (brights[0])
+// Brightness levels
+// Note: the maximum level must be relatively prime to NUM_COL otherwise
+// things will look odd due to beating
+uint8_t brights[] = {0, 2, 5, 7, 9, 13, 21, 31};
+#define NUM_BRIGHTS (sizeof(brights) / sizeof(brights[0]))
+#define MIN_BRIGHT (0)
+#define MAX_BRIGHT (NUM_BRIGHTS - 1)
 
 // Include animation converted from GIF
 #include "anim.h"
@@ -192,11 +204,7 @@ static void RefreshDisplay() {
 	for (int r = 0; r < NUM_ROW; r++)
 		digitalWrite(rowPin[r], ROW_OFF);
 
-
-	brightnessCount = (brightnessCount + 1) % 32;
-	if (brightness < brightnessCount || brightness == 0)
-		return;
-
+	brightnessCount = (brightnessCount + 1) % brights[MAX_BRIGHT];
 	colIdx = (colIdx + 1) % NUM_COL;
 
 	// Select current column
@@ -220,7 +228,7 @@ static void RefreshDisplay() {
 		c = r ^ c;
 		r = r ^ c;
 #endif
-		if (display[r][c] != 0)
+		if (display[r][c] != 0 && brights[display[r][c]] >= brightnessCount)
 			digitalWrite(rowPin[rowPtr], rowState);		// Check if the DOT needs to be on
 		else
 			digitalWrite(rowPin[rowPtr], !rowState);	// other wise turn it off
@@ -280,42 +288,41 @@ void DisplayChar(char c) {
 }
 
 // Displays an 8 x 8 splash screen
-void DisplaySplash(const uint8_t splash[NUM_COL]) {
+void DisplaySplash(const uint8_t splash[NUM_COL], int brightness) {
 	for (int r = 0; r < NUM_ROW; r++)
 		for (int c = 0; c < NUM_COL; c++)
-			display[r][c] = splash[r] & (1 << (NUM_COL - 1 - c)) ? MAX_BRIGHT : MIN_BRIGHT;
+			display[r][c] = splash[r] & (1 << (NUM_COL - 1 - c)) ? brightness : MIN_BRIGHT;
 }
 
 // Fade down the brightness over time
-void FadeDown(int dly) {
-	for (uint i = 0; i < sizeof(brights) / sizeof(brights[0]); i++) {
-		brightness = brights[i];
+void FadeDown(const uint8_t splash[NUM_COL], int dly) {
+	for (int b = NUM_BRIGHTS - 1; b >= 0; b--) {
+		DisplaySplash(splash, b);
 		delay(dly);
 	}
 	delay(dly * 2);
 }
 
 // Draws a single pixel at coordinate row, col
-// if state is 1 LED will be turned on
-// if state is 0 LED will be off
-void DrawPixel(int c, int r, int state) {
+void DrawPixel(int c, int r, int brightness) {
 	if (c < 0 || c >= NUM_COL)
 		return;
 	if (r < 0 || r >= NUM_ROW)
 		return;
 
-	if (state)
-		display[r][c] |= MAX_BRIGHT;
-	else
-		display[r][c] = MIN_BRIGHT;
+	display[r][c] |= brightness;
 }
 
 // matrix waterfall display
 void DisplayMatrix(int time, int dtime) {
 	for (int t = 0; t < time * 1000 / dtime; t++) {
 		for (int r = 6; r >= 0; r--)
-			for (int c = 0; c < 8; c++)
-				display[r + 1][c] = display[r][c];
+			for (int c = 0; c < 8; c++) {
+				if (display[r][c] == 0)
+					display[r + 1][c] = 0;
+				else
+					display[r + 1][c] = display[r][c] - random(2) * 2;
+			}
 		delay(dtime);
 
 		uint8_t rnd = byte(random(256));
@@ -497,59 +504,50 @@ void setup() {
 	//Start the serial Port
 	Serial.begin(9600);
 
-	DisplaySplash(splash_F);
-	FadeDown(50);
-
-	DisplaySplash(splash_H);
-	FadeDown(50);
-
-	DisplaySplash(splash_at);
-	FadeDown(50);
-
-	DisplaySplash(splash_T);
-	FadeDown(50);
+	FadeDown(splash_F, 50);
+	FadeDown(splash_H, 50);
+	FadeDown(splash_at, 50);
+	FadeDown(splash_T, 50);
 
 	ClearDisplay();
 	delay(1000);
-
-	brightness = brights[0]; // Reset brightness for the loop
 
 	Serial.println("FH@T");
 }
 
 /* Arduino loop function, called over and over */
 void loop() {
+	// Display scrolling message (75 msec per column scrolled)
+#ifdef DO_TEXT
 	const char PROGMEM *msg = "Flinders & Hackerspace @ Tonsley";
 
-	// Display scrolling message (75 msec per column scrolled)
-#if 1
 	ClearDisplay();
 	delay(500);
 	DisplayText(msg, 75);
 #endif
 
 	// Display Conway's game of life for 8 seconds at 8 FPS
-#if 1
+#ifdef DO_CONWAY
 	delay(500);
 	ClearDisplay();
 	DisplayConway(board1, 8, 125);
 #endif
 
 	// Display Matrix for 10 seconds at 8 FPS
-#if 1
+#ifdef DO_MATRIX
 	ClearDisplay();
 	DisplayMatrix(10, 125);
 #endif
 
 	// Display animation
-#if 1
+#ifdef DO_ANIM
 	ClearDisplay();
 	delay(500);
 	DisplayAnim(anim, anim_durs, sizeof(anim) / 8);
 #endif
 
 	// Flash Display
-#if 1
+#ifdef DO_FLASH
 	for (int i = 0; i < 5; i++) {
 		FillDisplay();
 		delay(250);
@@ -559,69 +557,67 @@ void loop() {
 #endif
 
 	// Display some icons
-#if 1
+#ifdef DO_ICONS
 	invertDisplay = false;
 	ClearDisplay();
-	DisplaySplash(frown_bmp);
+	DisplaySplash(frown_bmp, MAX_BRIGHT);
 
 	delay(1000);
-	DisplaySplash(neutral_bmp);
+	DisplaySplash(neutral_bmp, MAX_BRIGHT);
 
 	delay(1000);
-	DisplaySplash(smile_bmp);
+	DisplaySplash(smile_bmp, MAX_BRIGHT);
 
 	delay(1000);
-	DisplaySplash(heart);
+	DisplaySplash(heart, MAX_BRIGHT);
 	invertDisplay = true;
 
 	ClearDisplay();
-	DisplaySplash(frown_bmp);
+	DisplaySplash(frown_bmp, MAX_BRIGHT);
 
 	delay(1000);
-	DisplaySplash(neutral_bmp);
+	DisplaySplash(neutral_bmp, MAX_BRIGHT);
 
 	delay(1000);
-	DisplaySplash(smile_bmp);
+	DisplaySplash(smile_bmp, MAX_BRIGHT);
 
 	delay(1000);
-	DisplaySplash(heart);
+	DisplaySplash(heart, MAX_BRIGHT);
 
 	invertDisplay = false;
 #endif
 
 	// Light up pixels in sequence and back again
-#if 1
+#ifdef DO_SEQUENCE
 	delay(1000);
 	ClearDisplay();
 	for (int c = 0; c < 8; c++) {
 		for (int r = 0; r < 8; r++) {
-			DrawPixel(c, r, ON);
+			DrawPixel(c, r, MAX_BRIGHT);
 			delay(25);
 		}
 	}
 	for (int c = 7; c >= 0; c--) {
 		for (int r = 7; r >=0; r--) {
-			DrawPixel(c, r, OFF);
+			DrawPixel(c, r, MIN_BRIGHT);
 			delay(25);
 		}
 	}
 
 	for (int r = 0; r < 8; r++) {
 		for (int c = 0; c < 8; c++) {
-			DrawPixel( c, r, ON);
+			DrawPixel( c, r, MAX_BRIGHT);
 			delay(25);
 		}
 	}
 	for (int r = 7; r >= 0; r--) {
 		for (int c = 7; c >=0; c--) {
-			DrawPixel( c, r, OFF);
+			DrawPixel( c, r, MIN_BRIGHT);
 			delay(25);
 		}
 	}
 #endif
 }
-
-
 
 /*
  * Local variables:
