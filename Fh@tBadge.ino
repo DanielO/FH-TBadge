@@ -658,7 +658,7 @@ void loop() {
 		}
 	}
 	for (int c = 7; c >= 0; c--) {
-		for (int r = 7; r >=0; r--) {
+		for (int r = 7; r >= 0; r--) {
 			DrawPixel(c, r, MIN_BRIGHT);
 			delay(25);
 		}
@@ -666,13 +666,13 @@ void loop() {
 
 	for (int r = 0; r < 8; r++) {
 		for (int c = 0; c < 8; c++) {
-			DrawPixel( c, r, MAX_BRIGHT);
+			DrawPixel(c, r, MAX_BRIGHT);
 			delay(25);
 		}
 	}
 	for (int r = 7; r >= 0; r--) {
-		for (int c = 7; c >=0; c--) {
-			DrawPixel( c, r, MIN_BRIGHT);
+		for (int c = 7; c >= 0; c--) {
+			DrawPixel(c, r, MIN_BRIGHT);
 			delay(25);
 		}
 	}
