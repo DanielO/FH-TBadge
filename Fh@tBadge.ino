@@ -50,8 +50,6 @@ int invertDisplay = 0;
 int brightnessCount = 0;
 
 // Brightness levels
-// Note: the maximum level must be relatively prime to NUM_COL otherwise
-// things will look odd due to beating
 uint8_t brights[] = {0, 2, 5, 7, 9, 13, 21, 31};
 #define NUM_BRIGHTS (sizeof(brights) / sizeof(brights[0]))
 #define MIN_BRIGHT (0)
@@ -206,7 +204,9 @@ static void RefreshDisplay() {
 		digitalWrite(rowPin[r], ROW_OFF);
 
 	brightnessCount = (brightnessCount + 1) % brights[MAX_BRIGHT];
-	colIdx = (colIdx + 1) % NUM_COL;
+	// Only move to the next column when we've done all the brightness stuff for this one
+	if (brightnessCount == 0)
+		colIdx = (colIdx + 1) % NUM_COL;
 
 	// Select current column
 	digitalWrite(colPin[colIdx], COL_ON);
