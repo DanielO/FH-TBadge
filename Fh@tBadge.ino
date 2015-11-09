@@ -26,6 +26,8 @@
 #define DO_FLASH
 #define DO_ICONS
 #define DO_SEQUENCE
+#define DO_HORIZFADER
+#define DO_VERTFADER
 
 // FH@T Badge display with black back
 //const int colPin[NUM_COL] = { 8, 13,7,11,0,6,1,4 };		// Thes are the pins that the columns are connected to in order from col 0
@@ -529,6 +531,86 @@ void DisplayConway(const uint8_t PROGMEM start[NUM_ROW][NUM_COL], int time, int 
 	}
 }
 
+void DisplayHorizFader(int time, int dtime, int ppong) {
+	int ofs = 0, up = 1;
+	for (int t = 0; t < time * 1000 / dtime; t++) {
+		for (int r = 0; r < NUM_ROW; r += 2) {
+			int b = (MIN_BRIGHT + ofs) % NUM_BRIGHTS;
+			for (int c = 0; c < NUM_COL; c++) {
+				DrawPixel(c, r, b);
+				b = b + 1;
+				if (b > (int)MAX_BRIGHT)
+					b = MIN_BRIGHT;
+			}
+			b = (MAX_BRIGHT + ofs) % NUM_BRIGHTS;
+			for (int c = 0; c < NUM_COL; c++) {
+				DrawPixel(c, r + 1, b);
+				b = b - 1;
+				if (b < MIN_BRIGHT)
+					b = MAX_BRIGHT;
+			}
+		}
+		if (ppong) {
+			if (up) {
+				if (ofs == 7) {
+					up = 0;
+				} else {
+					ofs++;
+				}
+			} else {
+				if (ofs == 0) {
+					up = 1;
+				} else {
+					ofs--;
+				}
+			}
+		} else {
+			ofs++;
+		}
+		delay(dtime);
+	}
+}
+
+void DisplayVertFader(int time, int dtime, int ppong) {
+	int ofs = 0, up = 1;
+	for (int t = 0; t < time * 1000 / dtime; t++) {
+		for (int c = 0; c < NUM_COL; c += 2) {
+			int b = (MIN_BRIGHT + ofs) % NUM_BRIGHTS;
+			for (int r = 0; r < NUM_ROW; r++) {
+				DrawPixel(c, r, b);
+				b = b + 1;
+				if (b > (int)MAX_BRIGHT)
+					b = MIN_BRIGHT;
+			}
+			b = (MAX_BRIGHT + ofs) % NUM_BRIGHTS;
+			for (int r = 0; r < NUM_ROW; r++) {
+				DrawPixel(c + 1, r, b);
+				b = b - 1;
+				if (b < MIN_BRIGHT)
+					b = MAX_BRIGHT;
+			}
+		}
+		if (ppong) {
+			if (up) {
+				if (ofs == 7) {
+					up = 0;
+				} else {
+					ofs++;
+				}
+			} else {
+				if (ofs == 0) {
+					up = 1;
+				} else {
+					ofs--;
+				}
+			}
+		} else {
+			ofs++;
+		}
+		delay(dtime);
+	}
+}
+
 /* Arduino setup function, called once */
 void setup() {
 	invertDisplay = false;
@@ -570,6 +652,8 @@ void setup() {
 
 /* Arduino loop function, called over and over */
 void loop() {
+	ClearDisplay();
+	delay(1000);
 	// Display scrolling message (75 msec per column scrolled)
 #ifdef DO_TEXT
 	const char PROGMEM *msg = "Flinders & Hackerspace @ Tonsley";
@@ -676,6 +760,26 @@ void loop() {
 			delay(25);
 		}
 	}
+#endif
+
+#ifdef DO_HORIZFADER
+	ClearDisplay();
+	DisplayHorizFader(2, 50, 0);
+	ClearDisplay();
+	delay(200);
+	DisplayHorizFader(2, 50, 1);
+	ClearDisplay();
+	delay(200);
+#endif
+
+#ifdef DO_VERTFADER
+	ClearDisplay();
+	DisplayVertFader(2, 50, 0);
+	ClearDisplay();
+	delay(200);
+	DisplayVertFader(2, 50, 1);
+	ClearDisplay();
+	delay(200);
 #endif
 }
 
