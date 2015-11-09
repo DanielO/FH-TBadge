@@ -115,7 +115,7 @@ static const uint8_t PROGMEM splash_F[] = {
 	B01100000,
 };
 
-static const uint8_t PROGMEM  splash_H[] = {
+static const uint8_t PROGMEM splash_H[] = {
 	B01100110,
 	B01100110,
 	B01100110,
@@ -408,7 +408,7 @@ void DisplayText(const char PROGMEM *msg, int coldelay) {
 
 		// Scroll everything left in the display
 		for (int r = 0; r < NUM_ROW; r++)
-			for (int c = 0; c < NUM_COL - 1;  c++)
+			for (int c = 0; c < NUM_COL - 1; c++)
 				display[r][c] = display[r][c + 1];
 
 		// Add new data in on right most column
