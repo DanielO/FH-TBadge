@@ -582,7 +582,7 @@ void loop() {
 	// Display Fire for 10 seconds at ~15 FPS
 #ifdef DO_FIRE
 	ClearDisplay();
-	DisplayFire(10, 67, 4, 40);
+	DisplayFire(10, 67, NUM_BRIGHTS / 2, 40);
 	ClearDisplay();
 #endif
 
