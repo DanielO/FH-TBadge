@@ -182,11 +182,11 @@ static int start_timer_3(uint32_t frequency) {
 	period = TICKS_PER_SECOND / frequency;
 	if (period < 1 || period > 65535)
 		return 1;
-	T3CONCLR = T3_ON;			// Turn the timer off
-	T3CON = T3_PS_1_1;			// Set the prescaler
+	T3CONbits.ON = 0;			// Turn the timer off
+	T3CONbits.TCKPS = 0;		// Set the prescaler
 	TMR3 = 0;					// Clear the counter
 	PR3 = period;				// Set the period
-	T3CONSET = T3_ON;			// Turn the timer on
+	T3CONSETbits.ON = 1;		// Turn the timer on
 
 	return 0;
 }
